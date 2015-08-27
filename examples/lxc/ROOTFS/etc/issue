@@ -1,0 +1,12 @@
+
+\h (s6/anopa lxc v1.0)
+
+line:    \l
+date:    \d \t
+node:    \n
+domain:  \o
+os:      \s
+arch:    \m
+kernel:  \r
+version: \v
+

@@ -1,0 +1,3 @@
+#!/command/sh
+echo "System is Starting (from startmessage)"
+echo "System is Starting (from startmessage)" >2

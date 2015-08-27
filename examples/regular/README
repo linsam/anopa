@@ -1,0 +1,23 @@
+INITRAMFS is the example root directory for the initramfs image to use
+ROOTFS is the example root directory of the on-disk filesystem.
+
+Binaries are not included here (to save repository space). You will need to
+provide busybox, anopa, and s6/execline binaries on-disk and much of those in
+the initramfs.
+
+Points of Interest
+------------------
+
+In this setup, I took some insiration from Gentoo's /etc/conf.d for containing
+user configuration for services, but using s6-envdir instead of single files
+containing a bunch of variables.
+
+As a result, there is /etc/conf.d/net/<interface>/IPADDR and /etc/conf.d/hostname/HOSTNAME
+
+The examples currently use static IP addresses. I may update that to dhcpc in
+the future (and possibly ifplugd). I don't currently know how to handle that
+well, though. udhcpc and ifplugd should be services, but static IP is a
+one-shot. As far as I can tell, one-shot vs long-term is part of the service
+directory and can't be picked from configuration at start time. Perhaps the
+best thing is to have the actual net@ script update its own needs to force
+something like net-dhcp@ or net-ifplugd@ scripts to be dependancies?

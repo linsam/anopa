@@ -1,0 +1,10 @@
+#!/command/execlineb -P
+
+fdmove -c 1 2
+
+aa-service
+
+foreground {
+    aa-echo "Starting getty on $INSTANCE"
+}
+getty -L -H $INSTANCE 38400 $INSTANCE vt100

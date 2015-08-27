@@ -1,0 +1,30 @@
+ROOTFS contains the example root of the linux container tree.
+
+Executables are not included here; you'll need to provide your own anopa,
+busybox, s6/execline, and dropbear binaries
+
+A good place to start is to create the container using the standard 'busybox'
+template (which includes dropbear), then add anopa/s6/execline and the
+contents of the ROOTFS dirctory.  Don't forget to remove sbin/init and replace
+it with a symlink to aa-lxc-stage1. Also don't forget to put leapsecs.dat into
+etc.
+
+
+Differences from regular
+------------------------
+
+Unlike typical "real" systems, linux containers already have filesystems
+mounted.  Thus, stage0 and stage4 are unneeded. 
+
+Parsing the command-line is not useful, because (at least with the busybox template), you get the host's commandline.
+
+Also, some information from /sys is wrong as well. For example, the 'aa-tty' application obtains the active console on the host, independent of where the container is running. For example, if you are logged into the first graphical session on Ubuntu 14.04, aa-tty will tell you "/dev/tty7" even if your container doesn't even *have* a tty7!
+
+Further, the container's /dev/console actually acts like a real tty (at least
+when the container is started in foreground mode, I haven't tested it any
+other way). The actualy tty numbers (e.g. tty1) get used for lxc-console or
+are mapped to the host's ttys (depending on configuration). As such, assuming
+the system gets run in the foreground, it is actually useful to spawn a getty
+on the console, which is done by the "gettycon" service.
+
+The hostname is preset by the container configuration file, so having a hostname startup one-shot is not useful.

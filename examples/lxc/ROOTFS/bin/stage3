@@ -1,0 +1,74 @@
+#!/command/execlineb -S0
+#
+# anopa - Copyright (C) 2015 Olivier Brunel
+#
+# aa-stage3
+# Copyright (C) 2015 Olivier Brunel <jjk@jjacky.com>
+#
+# Modified for Linux Containers by John O'Meara <john.fr.omeara@gmail.com>
+#
+#
+# This file is part of anopa.
+#
+# anopa is free software: you can redistribute it and/or modify it under the
+# terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later
+# version.
+#
+# anopa is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.
+# See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along with
+# anopa. If not, see http://www.gnu.org/licenses/
+#
+
+# Set up a pipe to log messages
+piperw 3 4
+background
+{
+    fdclose 4 fdmove 0 3
+    redirfd -a 1 /var/log/boot.d/current
+    fdmove -c 2 1
+    s6-tai64n
+}
+fdclose 3
+fdmove 2 4
+
+# Make sure we're sane
+cd /
+# See comments in stage2 about aa-tty in an lxc
+#backtick -n TTY { aa-tty }
+#import -u TTY
+#redirfd -r 0 ${TTY}
+redirfd -r 0 /dev/console
+redirfd -w 1 /dev/console
+
+foreground { aa-echo -DB "Stage 3: Preparing ${1}..." }
+# Stop all running services -- s6-svscan did only exec into us, leaving the
+# whole supervised tree intact. Here we stop everything (longrun & oneshot) in
+# order.
+foreground { emptyenv -c s6-setsid aa-ctty -Ds aa-stop -D -ak uncaught-logs }
+# We left the catch-all running (in case), make sure everything will exit
+# properly when we send TERM
+foreground { s6-svc -x /run/services/uncaught-logs }
+
+# Kill everything left
+foreground { aa-echo -DB "Killing remaining processes..." }
+foreground { aa-echo -Dt "Sending SIGTERM to all processes..." }
+foreground { aa-kill -Dst }
+wait -r { } # Reap zombies
+# logger was killed, and we won't open it back
+fdmove -c 2 1
+foreground { pipeline { aa-echo -Dt "Sending SIGKILL to all processes..." }
+    redirfd -a 1 /var/log/boot.d/current
+    s6-tai64n
+}
+foreground { aa-kill -sk }
+wait { } # Wait for all children
+
+# At this point for lxc, we can just end it
+foreground { aa-sync }
+if -n { /command/aa-reboot --${1} }
+# Other parts, including pivot to initramfs, removed from this variant.
